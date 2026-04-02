@@ -1,0 +1,1827 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Revolutionary War Health Atlas</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root{--fd:'Cinzel',Georgia,serif;--fb:'EB Garamond',Georgia,serif;--xs:clamp(.75rem,.7rem + .25vw,.875rem);--sm:clamp(.875rem,.8rem + .35vw,1rem);--base:clamp(1rem,.95rem + .25vw,1.125rem);--lg:clamp(1.125rem,1rem + .75vw,1.5rem);--sp1:.25rem;--sp2:.5rem;--sp3:.75rem;--sp4:1rem;--sp5:1.25rem;--sp6:1.5rem;--rsm:.375rem;--rmd:.5rem;--rlg:.75rem;--tr:180ms cubic-bezier(.16,1,.3,1)}
+[data-theme="dark"]{--bg:#0f0e0c;--sur:#181714;--sur2:#1e1d1a;--sur3:#252320;--bdr:rgba(255,255,255,.10);--div:rgba(255,255,255,.06);--tx:#d8d3c8;--txm:#938d84;--txf:#575148;--ac:#c9a84c;--ach:#e0c06a;--acg:rgba(201,168,76,.15);--sh:0 8px 32px rgba(0,0,0,.6);--shs:0 2px 8px rgba(0,0,0,.4)}
+[data-theme="light"]{--bg:#f4f0e8;--sur:#f9f7f2;--sur2:#fff;--sur3:#eeebe2;--bdr:rgba(0,0,0,.12);--div:rgba(0,0,0,.07);--tx:#1e1c17;--txm:#6b6560;--txf:#b0aa9e;--ac:#8a6314;--ach:#6b4c10;--acg:rgba(138,99,20,.10);--sh:0 8px 32px rgba(0,0,0,.12);--shs:0 2px 8px rgba(0,0,0,.08)}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;font-family:var(--fb);font-size:var(--base);background:var(--bg);color:var(--tx);-webkit-font-smoothing:antialiased}
+#map{position:fixed;inset:0;z-index:0;transition:right .35s cubic-bezier(.16,1,.3,1)}
+.leaflet-container{background:#0a0907!important;font-family:var(--fb)!important}
+header{position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;gap:var(--sp4);padding:var(--sp3) var(--sp6);background:var(--sur);border-bottom:1px solid var(--bdr);box-shadow:var(--sh);backdrop-filter:blur(12px)}
+#lw{display:flex;align-items:center;gap:var(--sp3);flex-shrink:0}
+#lw svg{width:36px;height:36px;color:var(--ac)}
+#tb{line-height:1.1}
+#tb h1{font-family:var(--fd);font-size:var(--lg);font-weight:600;color:var(--tx);letter-spacing:.02em}
+#tb p{font-size:var(--xs);color:var(--txm);letter-spacing:.06em;text-transform:uppercase;font-family:var(--fd)}
+#hs{flex:1}
+#filters{display:flex;align-items:center;gap:var(--sp2);flex-wrap:wrap}
+#fl{font-size:var(--xs);color:var(--txm);text-transform:uppercase;letter-spacing:.08em;font-family:var(--fd);margin-right:var(--sp1);white-space:nowrap}
+.fb{font-family:var(--fd);font-size:var(--xs);padding:var(--sp1) var(--sp3);border:1px solid var(--bdr);border-radius:999px;background:transparent;color:var(--txm);cursor:pointer;transition:all var(--tr);white-space:nowrap}
+.fb:hover{color:var(--tx);border-color:var(--ac)}
+.fb.active{background:var(--acg);border-color:var(--ac);color:var(--ac)}
+#tt{width:36px;height:36px;border-radius:50%;border:1px solid var(--bdr);display:flex;align-items:center;justify-content:center;background:transparent;color:var(--txm);cursor:pointer;flex-shrink:0;transition:all var(--tr)}
+#tt:hover{border-color:var(--ac);color:var(--ac)}
+#panel{position:fixed;top:68px;right:0;bottom:0;z-index:800;width:390px;background:var(--sur);border-left:1px solid var(--bdr);display:flex;flex-direction:column;box-shadow:var(--sh);transform:translateX(100%);transition:transform .35s cubic-bezier(.16,1,.3,1)}
+#panel.open{transform:translateX(0)}
+#pc{position:absolute;top:var(--sp3);right:var(--sp4);background:none;border:none;color:var(--txm);cursor:pointer;font-size:1.3rem;line-height:1;transition:color var(--tr)}
+#pc:hover{color:var(--tx)}
+.ph{padding:var(--sp5) var(--sp6) var(--sp4);border-bottom:1px solid var(--div);flex-shrink:0}
+.ptb{font-family:var(--fd);font-size:var(--xs);letter-spacing:.1em;text-transform:uppercase;color:var(--ac);margin-bottom:var(--sp2)}
+.ptit{font-family:var(--fd);font-size:var(--lg);font-weight:600;line-height:1.2;color:var(--tx);margin-bottom:3px}
+.psub{font-size:var(--xs);color:var(--txm)}
+.pbod{flex:1;overflow-y:auto;padding:var(--sp5) var(--sp6);display:flex;flex-direction:column;gap:var(--sp5)}
+.pbod::-webkit-scrollbar{width:4px}
+.pbod::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:2px}
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:var(--sp3)}
+.sc{background:var(--sur3);border:1px solid var(--bdr);border-radius:var(--rmd);padding:var(--sp3) var(--sp4)}
+.sl{font-family:var(--fd);font-size:.62rem;text-transform:uppercase;letter-spacing:.1em;color:var(--txm);margin-bottom:var(--sp1)}
+.sv{font-size:var(--sm);color:var(--tx);font-weight:500;line-height:1.3}
+.sv.hi{color:var(--ac)}
+.sv.da{color:#dd6974}
+.sv.bl{color:#4f98a3}
+.db{display:flex;flex-direction:column;gap:var(--sp2)}
+.dl{font-family:var(--fd);font-size:var(--xs);text-transform:uppercase;letter-spacing:.1em;color:var(--txm)}
+.dv{font-size:var(--sm);color:var(--tx);line-height:1.6}
+.dvlink{font-size:var(--xs);color:var(--ac);text-decoration:none;font-family:var(--fd);letter-spacing:.04em}
+.dvlink:hover{color:var(--ach);text-decoration:underline}
+.divl{border:none;border-top:1px solid var(--div)}
+.tag{display:inline-block;font-family:var(--fd);font-size:var(--xs);letter-spacing:.05em;padding:2px 10px;border-radius:999px;border:1px solid;margin:2px}
+.tag.pa{color:#dd6974;border-color:rgba(221,105,116,.4);background:rgba(221,105,116,.08)}
+.tag.mo{color:#4f98a3;border-color:rgba(79,152,163,.4);background:rgba(79,152,163,.08)}
+.tag.ev{color:var(--ac);border-color:rgba(201,168,76,.4);background:var(--acg)}
+.tag.ba{color:#fdab43;border-color:rgba(253,171,67,.4);background:rgba(253,171,67,.08)}
+.tag.in{color:#a86fdf;border-color:rgba(168,111,223,.4);background:rgba(168,111,223,.08)}
+.pip-row{display:flex;gap:3px;align-items:center;margin-bottom:2px}
+.pip{width:10px;height:10px;border-radius:50%;background:var(--bdr);transition:background var(--tr)}
+.pip.on{background:#dd6974}
+.piplbl{font-size:var(--xs);color:var(--txm);margin-left:var(--sp2)}
+.badge-inoc{display:inline-block;font-family:var(--fd);font-size:.6rem;letter-spacing:.08em;padding:1px 8px;border-radius:999px;border:1px solid rgba(168,111,223,.5);background:rgba(168,111,223,.1);color:#a86fdf;margin-left:var(--sp2)}
+#legend{position:fixed;bottom:var(--sp6);left:var(--sp6);z-index:900;background:var(--sur);border:1px solid var(--bdr);border-radius:var(--rlg);padding:var(--sp4) var(--sp5);box-shadow:var(--shs);min-width:220px}#legend-head{display:flex;align-items:center;justify-content:space-between;gap:var(--sp4)}#legend-toggle{background:none;border:none;color:var(--txm);cursor:pointer;font-size:1rem;line-height:1;padding:0;display:none;transition:color var(--tr)}#legend-toggle:hover{color:var(--tx)}#legend-body{overflow:hidden;transition:max-height .3s ease,opacity .3s ease;max-height:600px;opacity:1}#legend-body.collapsed{max-height:0;opacity:0;pointer-events:none}@media(max-width:768px){#legend{bottom:var(--sp4);left:var(--sp4);min-width:170px}#legend-toggle{display:block}}
+#legend h3{font-family:var(--fd);font-size:var(--xs);text-transform:uppercase;letter-spacing:.1em;color:var(--txm);margin-bottom:var(--sp3)}
+.ls{margin-bottom:var(--sp3)}
+.lst{font-size:var(--xs);color:var(--txf);text-transform:uppercase;letter-spacing:.08em;font-family:var(--fd);margin-bottom:var(--sp2)}
+.lr,.lsr{display:flex;align-items:center;gap:var(--sp3);margin-bottom:var(--sp2)}
+.ld{width:12px;height:12px;border-radius:50%;flex-shrink:0;border:1.5px solid rgba(255,255,255,.2)}
+.lc{border-radius:50%;border:2px solid var(--ac);background:var(--acg);flex-shrink:0}
+.lt{font-size:var(--xs);color:var(--txm)}
+.ldiv{border:none;border-top:1px solid var(--div);margin:var(--sp3) 0}
+.lsym{width:14px;height:14px;border-radius:3px;flex-shrink:0;border:1.5px solid rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:8px}
+#hint{position:fixed;bottom:var(--sp6);left:50%;transform:translateX(-50%);z-index:900;background:var(--sur);border:1px solid var(--bdr);border-radius:999px;padding:var(--sp2) var(--sp5);font-size:var(--xs);color:var(--txm);font-family:var(--fd);letter-spacing:.06em;pointer-events:none;transition:opacity .4s}
+#hint.hidden{opacity:0}
+.bm{display:flex;align-items:center;justify-content:center;border-radius:50%;border:2.5px solid rgba(255,255,255,.25);transition:transform .15s,box-shadow .15s;cursor:pointer}
+.bm:hover{transform:scale(1.18);box-shadow:0 0 14px rgba(201,168,76,.45)}
+.dm{display:flex;align-items:center;justify-content:center;border-radius:4px;border:2px solid rgba(255,255,255,.2);cursor:pointer;transition:transform .15s,box-shadow .15s}
+.dm:hover{transform:scale(1.18)}
+.em{display:flex;align-items:center;justify-content:center;border-radius:50%;cursor:pointer;transition:transform .15s}
+.em:hover{transform:scale(1.18)}
+.leaflet-popup-content-wrapper{background:var(--sur2)!important;border:1px solid var(--bdr)!important;border-radius:var(--rmd)!important;box-shadow:var(--sh)!important;padding:0!important}
+.leaflet-popup-content{margin:0!important;width:270px!important}
+.leaflet-popup-tip{background:var(--sur2)!important}
+.leaflet-popup-close-button{color:var(--txm)!important;font-size:16px!important;padding:4px 8px!important}
+.pi{padding:var(--sp4)}
+.pt{font-family:var(--fd);font-size:.63rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:var(--sp2);font-weight:600}
+.pn{font-family:var(--fd);font-size:.95rem;font-weight:600;color:var(--tx);margin-bottom:var(--sp2);line-height:1.2}
+.psg{display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-bottom:var(--sp3)}
+.psc{background:var(--sur3);border-radius:var(--rsm);padding:4px 8px}
+.psl{font-family:var(--fd);font-size:.58rem;text-transform:uppercase;letter-spacing:.08em;color:var(--txm)}
+.psv{font-size:.8rem;font-weight:500;color:var(--tx)}
+.ppills{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:var(--sp2)}
+.ppill{font-size:.6rem;font-family:var(--fd);letter-spacing:.05em;text-transform:uppercase;padding:1px 7px;border-radius:999px;border:1px solid}
+.pcta{display:block;margin-top:var(--sp3);font-family:var(--fd);font-size:.67rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ac);cursor:pointer;background:none;border:none;padding:0;text-align:left}
+.pcta:hover{color:var(--ach)}
+body.ms #map{right:390px}
+@media(max-width:768px){#panel{width:100%;top:68px}body.ms #map{right:0}#filters{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <div id="lw">
+    <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="18" cy="18" r="15" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 2" opacity="0.4"/>
+      <path d="M18 4L21 14L31 18L21 22L18 32L15 22L5 18L15 14Z" stroke="currentColor" stroke-width="1.6" fill="none"/>
+      <circle cx="18" cy="18" r="2.5" fill="currentColor"/>
+      <path d="M18 2L19.5 7L18 5.5L16.5 7Z" fill="currentColor"/>
+    </svg>
+    <div id="tb">
+      <h1>Revolutionary War Health Atlas</h1>
+      <p>Combat deaths, disease burdens &amp; infectious disease ecology &middot; 1775&ndash;1782</p>
+    </div>
+  </div>
+  <div id="hs"></div>
+  <div id="filters" role="group" aria-label="Filter by theater">
+    <span id="fl">Theater</span>
+    <button class="fb active" data-region="all">All</button>
+    <button class="fb" data-region="New England">New England</button>
+    <button class="fb" data-region="Canada">Canada</button>
+    <button class="fb" data-region="Mid-Atlantic">Mid-Atlantic</button>
+    <button class="fb" data-region="Hudson Valley">Hudson Valley</button>
+    <button class="fb" data-region="South">South</button>
+    <button class="fb" data-region="Virginia">Virginia</button>
+    <button class="fb" data-region="Frontier / Western">Frontier</button>
+  </div>
+  <button id="tt" aria-label="Switch theme">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  </button>
+</header>
+<div id="map" role="main"></div>
+<aside id="panel" role="complementary">
+  <button id="pc" aria-label="Close panel">&#215;</button>
+  <div class="ph">
+    <div class="ptb" id="p-theater">Theater</div>
+    <div class="ptit" id="p-title">Site</div>
+    <div class="psub" id="p-sub"></div>
+  </div>
+  <div class="pbod">
+    <div class="sg">
+      <div class="sc"><div class="sl">American Killed</div><div class="sv hi" id="s-amk">—</div></div>
+      <div class="sc"><div class="sl">Am. Wounded</div><div class="sv" id="s-amw">—</div></div>
+      <div class="sc"><div class="sl">British/Enemy Killed</div><div class="sv" id="s-brk">—</div></div>
+      <div class="sc"><div class="sl">Br. Wounded</div><div class="sv" id="s-brw">—</div></div>
+      <div class="sc"><div class="sl">Total Combat Dead</div><div class="sv hi" id="s-tot">—</div></div>
+      <div class="sc"><div class="sl">Disease Deaths</div><div class="sv da" id="s-dis">—</div></div>
+    </div>
+    <div class="db">
+      <div class="dl">Victor</div>
+      <div class="dv" id="p-victor"></div>
+    </div>
+    <div class="db">
+      <div class="dl">Disease Evidence Level</div>
+      <div class="pip-row" id="p-pips"></div>
+      <div class="dv" id="p-evlbl" style="font-size:var(--xs);color:var(--txm);font-style:italic"></div>
+    </div>
+    <hr class="divl"/>
+    <div class="db"><div class="dl">Geographic Disease Zone</div><div class="dv" id="p-geozone"></div></div>
+    <div class="db"><div class="dl">Key Infectious Threats</div><div class="dv" id="p-path"></div></div>
+    <div class="db"><div class="dl">Disease Death Details</div><div class="dv" id="p-disnote"></div></div>
+    <hr class="divl"/>
+    <div class="db"><div class="dl">Health Finding</div><div class="dv" id="p-find"></div></div>
+    <div class="db"><div class="dl">Historical Notes</div><div class="dv" id="p-hist" style="font-size:var(--xs);color:var(--txm)"></div></div>
+    <div class="db"><div class="dl">Data Flag</div><div class="dv" id="p-flag" style="font-size:var(--xs);color:var(--txm);font-style:italic"></div></div>
+    <div class="db">
+      <div class="dl">Sources</div>
+      <div class="dv" id="p-src" style="font-size:var(--xs);color:var(--txm);font-style:italic"></div>
+      <a class="dvlink" id="p-url" href="#" target="_blank" rel="noopener noreferrer">Primary source &#8599;</a>
+    </div>
+    <div class="db"><div id="p-tags"></div></div>
+  </div>
+</aside>
+<div id="legend" role="note">
+  <div id="legend-head">
+    <h3>Map Key</h3>
+    <button id="legend-toggle" aria-label="Close map key" aria-expanded="true">&#215;</button>
+  </div>
+  <div id="legend-body">
+  <div class="ls">
+    <div class="lst">Theater</div>
+    <div class="lr"><div class="ld" style="background:#c9a84c"></div><span class="lt">New England</span></div>
+    <div class="lr"><div class="ld" style="background:#a86fdf"></div><span class="lt">Canada</span></div>
+    <div class="lr"><div class="ld" style="background:#4f98a3"></div><span class="lt">Mid-Atlantic</span></div>
+    <div class="lr"><div class="ld" style="background:#5591c7"></div><span class="lt">Hudson Valley</span></div>
+    <div class="lr"><div class="ld" style="background:#dd6974"></div><span class="lt">South</span></div>
+    <div class="lr"><div class="ld" style="background:#fdab43"></div><span class="lt">Virginia</span></div>
+    <div class="lr"><div class="ld" style="background:#6daa45"></div><span class="lt">Frontier / Western</span></div>
+  </div>
+  <div class="ldiv"></div>
+  <div class="ls">
+    <div class="lst">Site Type</div>
+    <div class="lr"><div class="lsym" style="border-radius:50%;background:rgba(201,168,76,.2);border-color:#c9a84c">&#x2022;</div><span class="lt">Battle / Siege</span></div>
+    <div class="lr"><div class="lsym" style="border-radius:3px;background:rgba(221,105,116,.15);border-color:#dd6974">&#9632;</div><span class="lt">Encampment / Disease node</span></div>
+    <div class="lr"><div class="lsym" style="border-radius:50%;background:rgba(79,152,163,.2);border-color:#4f98a3">&#x2726;</div><span class="lt">Prison mortality site</span></div>
+  </div>
+  <div class="ldiv"></div>
+  <div class="ls">
+    <div class="lst">Marker size = severity</div>
+    <div class="lsr"><div class="lc" style="width:10px;height:10px"></div><span class="lt">Low</span></div>
+    <div class="lsr"><div class="lc" style="width:17px;height:17px"></div><span class="lt">Moderate</span></div>
+    <div class="lsr"><div class="lc" style="width:26px;height:26px"></div><span class="lt">High</span></div>
+  </div>
+  </div>
+</div>
+<div id="hint" role="status">Click any site for battle and disease details</div>
+
+<script>
+const SITES = [
+  {
+    name:"Lexington & Concord",
+    region:"New England",
+    subregion:"Massachusetts",
+    cat:"battle",
+    date:"19 April 1775",
+    victor:"Patriot",
+    lat:42.4473,lon:-71.2272,
+    severity:3,
+    amKilled:49,
+    amWounded:41,
+    brKilled:73,
+    brWounded:174,
+    totalDead:122,
+    totalWounded:215,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:1,
+    disEvidenceLabel:"Campaign-level context",
+    geoDisZone:"New England \u2014 smallpox reservoir, temperate dysentery",
+    pathogens:"Smallpox (Variola major), dysentery",
+    inocRelevant:true,
+    finding:"Opening engagements occurred inside a regional smallpox epidemic that ultimately drove Washington's 1777 army-wide inoculation mandate.",
+    diseaseNote:"No battle-specific disease count. Smallpox circulated in Boston-area militia before and after the fight. Fenn (2001) documents ongoing smallpox in the 1775 New England mobilization.",
+    histNotes:"Peckham (1974): 49 Am, 73 Br killed. First engagements of the war.",
+    dataFlag:"combat deaths reliable; disease deaths contextual only",
+    abppId:"LEXC",
+    sourceShort:"Peckham 1974; Fenn 2001",
+    citationUrl:"https://www.battlefields.org/learn/revolutionary-war/battles/lexington-and-concord",
+    peckhamNote:""
+  },
+  {
+    name:"Bunker Hill (Breed's Hill)",
+    region:"New England",
+    subregion:"Massachusetts",
+    cat:"battle",
+    date:"17 June 1775",
+    victor:"British",
+    lat:42.3763,lon:-71.0617,
+    severity:4,
+    amKilled:411,
+    amWounded:271,
+    brKilled:226,
+    brWounded:828,
+    totalDead:637,
+    totalWounded:1099,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:1,
+    disEvidenceLabel:"Campaign-level context",
+    geoDisZone:"New England \u2014 smallpox reservoir",
+    pathogens:"Smallpox (Variola major), dysentery",
+    inocRelevant:true,
+    finding:"Costliest British combat losses of the war. The siege environment that followed was shaped by smallpox \u2014 Washington barred variolated soldiers from mixing with susceptibles.",
+    diseaseNote:"Peckham: 411 Am, 226 Br killed. Disease deaths specific to this battle not separated from the wider siege. Smallpox risk drove early Continental Army disease policy.",
+    histNotes:"The British took the hill at enormous cost. The battle demonstrated that American militia could stand against regulars.",
+    dataFlag:"combat deaths reliable; disease deaths contextual only",
+    abppId:"BUHI",
+    sourceShort:"Peckham 1974; Fenn 2001",
+    citationUrl:"https://www.battlefields.org/learn/revolutionary-war/battles/bunker-hill",
+    peckhamNote:""
+  },
+  {
+    name:"Boston Smallpox Epidemic Node",
+    region:"New England",
+    subregion:"Massachusetts",
+    cat:"disease_node",
+    date:"1775\u20131776",
+    victor:"",
+    lat:42.3601,lon:-71.0589,
+    severity:4,
+    amKilled:0,
+    amWounded:0,
+    brKilled:0,
+    brWounded:0,
+    totalDead:0,
+    totalWounded:0,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:3,
+    disEvidenceLabel:"Campaign-level bounded estimate",
+    geoDisZone:"New England \u2014 smallpox reservoir",
+    pathogens:"Smallpox (Variola major)",
+    inocRelevant:true,
+    finding:"Boston was the epicenter of the smallpox outbreak that shaped early Continental Army policy. Washington's decision to inoculate the entire army, made while at Valley Forge in 1777, traces directly to the 1775-76 epidemic.",
+    diseaseNote:"Smallpox incapacitated large portions of the Continental forces during and after the siege of Boston. Exact deaths in the Boston theater are not separable from army-wide smallpox mortality.",
+    histNotes:"Fenn (2001) provides the most rigorous account of the 1775-76 smallpox epidemic in New England. The disease affected both armies but disproportionately the less-immune American forces.",
+    dataFlag:"disease-only node; no combat deaths",
+    abppId:"",
+    sourceShort:"Fenn 2001 Pox Americana",
+    citationUrl:"https://www.americanrevolutioninstitute.org/lessons-from-a-revolutionary-epidemic/",
+    peckhamNote:""
+  },
+  {
+    name:"Rhode Island",
+    region:"New England",
+    subregion:"Rhode Island",
+    cat:"battle",
+    date:"29 Aug 1778",
+    victor:"Draw/British withdrawal",
+    lat:41.606,lon:-71.2764,
+    severity:3,
+    amKilled:167,
+    amWounded:181,
+    brKilled:260,
+    brWounded:170,
+    totalDead:427,
+    totalWounded:351,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:1,
+    disEvidenceLabel:"Campaign-level context",
+    geoDisZone:"New England \u2014 temperate dysentery, typhus",
+    pathogens:"Dysentery, typhus",
+    inocRelevant:false,
+    finding:"One of the costlier northern engagements. Disease context is general summer campaign rather than a discrete epidemic event.",
+    diseaseNote:"No battle-specific disease count. Standard summer campaign dysentery and typhus risk applies.",
+    histNotes:"Peckham: 167 Am, 260 Br killed. First American operation with French allies (Estaing's fleet).",
+    dataFlag:"combat deaths reliable; disease contextual only",
+    abppId:"RISL",
+    sourceShort:"Peckham 1974",
+    citationUrl:"https://www.battlefields.org/learn/revolutionary-war/battles/rhode-island",
+    peckhamNote:""
+  },
+  {
+    name:"Quebec & Canada Invasion",
+    region:"Canada",
+    subregion:"Quebec Province",
+    cat:"campaign",
+    date:"31 Dec 1775 \u2013 Spring 1776",
+    victor:"British",
+    lat:46.8123,lon:-71.2145,
+    severity:4,
+    amKilled:100,
+    amWounded:300,
+    brKilled:20,
+    brWounded:30,
+    totalDead:120,
+    totalWounded:330,
+    disLow:300,
+    disHigh:600,
+    disRange:"300\u2013600",
+    disTier:3,
+    disEvidenceLabel:"Campaign-level bounded estimate",
+    geoDisZone:"Northern \u2014 smallpox naive population, typhus, dysentery",
+    pathogens:"Smallpox (Variola major), dysentery, typhus",
+    inocRelevant:true,
+    finding:"The clearest case in the war where smallpox directly determined strategic outcome. Approximately 5,000 of 10,000 troops sent to Canada fell sick; hundreds died of smallpox before Quebec could be effectively besieged.",
+    diseaseNote:"Fenn (2001) estimates hundreds of smallpox deaths in the force. AMEDD Gillett Ch.1 documents smallpox sweeping the army before the assault. Disease deaths estimated for the broader campaign, not only Dec 31 assault.",
+    histNotes:"Battle KIA from the Dec 31 assault specifically. The broader Canada campaign (~6 months) saw catastrophic disease attrition. Montgomery killed; Arnold wounded.",
+    dataFlag:"bounded disease estimate; medium confidence",
+    abppId:"",
+    sourceShort:"Fenn 2001; AMEDD Gillett Ch.1",
+    citationUrl:"https://achh.army.mil/history/book-rev-gillett1-ch4/",
+    peckhamNote:""
+  },
+  {
+    name:"Long Island (Brooklyn)",
+    region:"Mid-Atlantic",
+    subregion:"New York",
+    cat:"battle",
+    date:"27 Aug 1776",
+    victor:"British",
+    lat:40.6068,lon:-73.9498,
+    severity:4,
+    amKilled:200,
+    amWounded:700,
+    brKilled:63,
+    brWounded:337,
+    totalDead:263,
+    totalWounded:1037,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:1,
+    disEvidenceLabel:"Theater-level prisoner context",
+    geoDisZone:"Mid-Atlantic \u2014 smallpox, dysentery, typhus",
+    pathogens:"Smallpox, dysentery, typhus (jail fever)",
+    inocRelevant:true,
+    finding:"A decisive British opening victory in New York. The mass prisoner stream from this campaign fed directly into the disease-ridden prison ships in Wallabout Bay.",
+    diseaseNote:"No battle-specific disease count. Thousands captured here and at subsequent actions ended up on prison hulks where disease killed at a far greater rate than combat.",
+    histNotes:"Peckham: 200 Am, 63 Br killed. Washington's army barely escaped to Manhattan.",
+    dataFlag:"combat deaths reliable; disease deaths captured in Prison Ships node",
+    abppId:"LOIS",
+    sourceShort:"Peckham 1974; Burrows 2008",
+    citationUrl:"https://www.battlefields.org/learn/revolutionary-war/battles/long-island",
+    peckhamNote:""
+  },
+  {
+    name:"White Plains",
+    region:"Mid-Atlantic",
+    subregion:"New York",
+    cat:"battle",
+    date:"28 Oct 1776",
+    victor:"British",
+    lat:41.033,lon:-73.7629,
+    severity:2,
+    amKilled:150,
+    amWounded:250,
+    brKilled:229,
+    brWounded:228,
+    totalDead:379,
+    totalWounded:478,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:1,
+    disEvidenceLabel:"Campaign-level context",
+    geoDisZone:"Mid-Atlantic \u2014 smallpox, dysentery",
+    pathogens:"Smallpox, dysentery",
+    inocRelevant:true,
+    finding:"Part of the 1776 New York campaign where disease and combat losses compounded across multiple engagements.",
+    diseaseNote:"No battle-specific disease count.",
+    histNotes:"Peckham: 150 Am, 229 Br killed.",
+    dataFlag:"combat deaths reliable; disease contextual only",
+    abppId:"WHPL",
+    sourceShort:"Peckham 1974",
+    citationUrl:"https://www.battlefields.org/learn/revolutionary-war/battles/white-plains",
+    peckhamNote:""
+  },
+  {
+    name:"Fort Washington",
+    region:"Mid-Atlantic",
+    subregion:"New York",
+    cat:"battle",
+    date:"16 Nov 1776",
+    victor:"British",
+    lat:40.852,lon:-73.9318,
+    severity:3,
+    amKilled:154,
+    amWounded:96,
+    brKilled:78,
+    brWounded:374,
+    totalDead:232,
+    totalWounded:470,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:2,
+    disEvidenceLabel:"Downstream prisoner context",
+    geoDisZone:"Mid-Atlantic \u2014 typhus, smallpox, dysentery",
+    pathogens:"Smallpox, dysentery, typhus (jail fever)",
+    inocRelevant:true,
+    finding:"The capture of ~2,800 Americans here swelled New York's prison ships. Disease would kill more of these men than the battle itself.",
+    diseaseNote:"Peckham: 154 Am, 78 Br killed. The 2,800 captured are central to understanding downstream prison ship mortality.",
+    histNotes:"One of the most damaging American defeats of 1776.",
+    dataFlag:"combat deaths reliable; disease deaths captured in Prison Ships node",
+    abppId:"",
+    sourceShort:"Peckham 1974; Burrows 2008",
+    citationUrl:"https://www.battlefields.org/learn/revolutionary-war/battles/fort-washington",
+    peckhamNote:""
+  },
+  {
+    name:"Trenton",
+    region:"Mid-Atlantic",
+    subregion:"New Jersey",
+    cat:"battle",
+    date:"26 Dec 1776",
+    victor:"Patriot",
+    lat:40.2206,lon:-74.7597,
+    severity:1,
+    amKilled:4,
+    amWounded:8,
+    brKilled:22,
+    brWounded:83,
+    totalDead:26,
+    totalWounded:91,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:1,
+    disEvidenceLabel:"Campaign-level winter context",
+    geoDisZone:"Mid-Atlantic winter \u2014 respiratory infection, frostbite-associated infection, dysentery",
+    pathogens:"Smallpox, dysentery, respiratory infection, frostbite-associated infection",
+    inocRelevant:true,
+    finding:"Strategically pivotal but low-casualty. Disease mattered through exposure and environmental stress \u2014 the Delaware crossing was made by men already ravaged by campaign disease.",
+    diseaseNote:"Peckham: 4 Am, 22 Hessian killed. The broader winter campaign saw far more disease than combat deaths.",
+    histNotes:"The surprise Christmas night crossing of the Delaware and capture of the Hessian garrison revived American morale.",
+    dataFlag:"combat deaths reliable; disease contextual only",
+    abppId:"TREN",
+    sourceShort:"Peckham 1974; Fischer 2004",
+    citationUrl:"https://www.battlefields.org/learn/revolutionary-war/battles/trenton",
+    peckhamNote:""
+  },
+  {
+    name:"Princeton",
+    region:"Mid-Atlantic",
+    subregion:"New Jersey",
+    cat:"battle",
+    date:"3 Jan 1777",
+    victor:"Patriot",
+    lat:40.3573,lon:-74.6672,
+    severity:2,
+    amKilled:44,
+    amWounded:100,
+    brKilled:28,
+    brWounded:58,
+    totalDead:72,
+    totalWounded:158,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:1,
+    disEvidenceLabel:"Campaign-level winter context",
+    geoDisZone:"Mid-Atlantic winter \u2014 respiratory infection, dysentery",
+    pathogens:"Smallpox, respiratory infection, dysentery",
+    inocRelevant:true,
+    finding:"Part of the ten-crucial-days winter offensive; disease exposure continued regardless of tactical success.",
+    diseaseNote:"Peckham: 44 Am, 28 Br killed.",
+    histNotes:"Washington defeated Cornwallis's rearguard and then moved to winter quarters at Morristown.",
+    dataFlag:"combat deaths reliable; disease contextual only",
+    abppId:"PRIN",
+    sourceShort:"Peckham 1974",
+    citationUrl:"https://www.battlefields.org/learn/revolutionary-war/battles/princeton",
+    peckhamNote:""
+  },
+  {
+    name:"Brandywine",
+    region:"Mid-Atlantic",
+    subregion:"Pennsylvania",
+    cat:"battle",
+    date:"11 Sept 1777",
+    victor:"British",
+    lat:39.8712,lon:-75.5468,
+    severity:4,
+    amKilled:300,
+    amWounded:600,
+    brKilled:90,
+    brWounded:488,
+    totalDead:390,
+    totalWounded:1088,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:2,
+    disEvidenceLabel:"Campaign-level hospital context",
+    geoDisZone:"Mid-Atlantic \u2014 dysentery, typhus, typhoid-like fevers",
+    pathogens:"Dysentery, typhus (camp fever), smallpox risk",
+    inocRelevant:true,
+    finding:"One of the costliest battles of the Philadelphia campaign; AMEDD documents heavy hospital disease load across Pennsylvania throughout autumn 1777.",
+    diseaseNote:"Peckham: ~300 Am, ~90 Br killed. AMEDD Gillett Ch.4 documents the dysentery and typhus toll in Pennsylvania regimental hospitals during the campaign.",
+    histNotes:"British flanking maneuver bypassed American position; Howe opened the road to Philadelphia.",
+    dataFlag:"combat deaths reliable; disease burden hospital-level estimate",
+    abppId:"BRAN",
+    sourceShort:"Peckham 1974; AMEDD Gillett Ch.4",
+    citationUrl:"https://achh.army.mil/history/book-rev-gillett1-ch4/",
+    peckhamNote:""
+  },
+  {
+    name:"Paoli",
+    region:"Mid-Atlantic",
+    subregion:"Pennsylvania",
+    cat:"battle",
+    date:"21 Sept 1777",
+    victor:"British",
+    lat:40.0412,lon:-75.488,
+    severity:3,
+    amKilled:300,
+    amWounded:70,
+    brKilled:7,
+    brWounded:22,
+    totalDead:307,
+    totalWounded:92,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:1,
+    disEvidenceLabel:"Campaign-level context",
+    geoDisZone:"Mid-Atlantic \u2014 dysentery, typhus",
+    pathogens:"Dysentery, typhus",
+    inocRelevant:true,
+    finding:"The 'Paoli Massacre' \u2014 a nighttime bayonet assault inflicting disproportionate American casualties. 9th deadliest American-loss engagement by Peckham.",
+    diseaseNote:"No disease-specific count for this battle.",
+    histNotes:"Peckham: ~300 Am, 7 Br killed. General Wayne's command surprised in camp.",
+    dataFlag:"combat deaths reliable; disease contextual only",
+    abppId:"",
+    sourceShort:"Peckham 1974",
+    citationUrl:"https://www.battlefields.org/learn/revolutionary-war/battles/paoli",
+    peckhamNote:""
+  },
+  {
+    name:"Germantown",
+    region:"Mid-Atlantic",
+    subregion:"Pennsylvania",
+    cat:"battle",
+    date:"4 Oct 1777",
+    victor:"British",
+    lat:40.0334,lon:-75.18,
+    severity:4,
+    amKilled:152,
+    amWounded:521,
+    brKilled:71,
+    brWounded:450,
+    totalDead:223,
+    totalWounded:971,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:2,
+    disEvidenceLabel:"Campaign-level hospital context",
+    geoDisZone:"Mid-Atlantic \u2014 dysentery, typhus, typhoid-like fevers",
+    pathogens:"Dysentery, typhus, typhoid-like fevers",
+    inocRelevant:true,
+    finding:"A costly defeat in the Philadelphia campaign; AMEDD records describe overcrowded Pennsylvania hospitals with dysentery and typhus throughout autumn 1777.",
+    diseaseNote:"Peckham: 152 Am, 71 Br killed. Hospital disease burden documented by AMEDD.",
+    histNotes:"Washington's bold counterattack in fog miscarried; American units fired on each other.",
+    dataFlag:"combat deaths reliable; disease hospital-level context",
+    abppId:"GERM",
+    sourceShort:"Peckham 1974; AMEDD Gillett Ch.4",
+    citationUrl:"https://www.battlefields.org/learn/revolutionary-war/battles/germantown",
+    peckhamNote:""
+  },
+  {
+    name:"Valley Forge (Encampment)",
+    region:"Mid-Atlantic",
+    subregion:"Pennsylvania",
+    cat:"encampment",
+    date:"Winter 1777\u20131778",
+    victor:"",
+    lat:40.1003,lon:-75.4577,
+    severity:5,
+    amKilled:0,
+    amWounded:0,
+    brKilled:0,
+    brWounded:0,
+    totalDead:0,
+    totalWounded:0,
+    disLow:1700,
+    disHigh:2000,
+    disRange:"1,700\u20132,000",
+    disTier:5,
+    disEvidenceLabel:"Encampment-specific bounded estimate \u2014 strongest disease data of the war",
+    geoDisZone:"Mid-Atlantic winter \u2014 typhus, typhoid, dysentery, pneumonia, influenza",
+    pathogens:"Typhus, typhoid fever, dysentery, influenza, pneumonia, smallpox (residual)",
+    inocRelevant:true,
+    finding:"The best-documented disease mortality site of the war. Crowding, contaminated water, failed commissary, and inadequate shelter produced a multi-pathogen epidemic complex killing ~1,700\u20132,000 men without a battle.",
+    diseaseNote:"NPS Valley Forge: ~2,000 deaths during encampment. AMEDD Gillett: 1,700\u20132,000 from muster records. Fenn: residual smallpox risk partially mitigated by Washington's Feb 1777 inoculation order. Typhus and typhoid were dominant killers.",
+    histNotes:"Washington issued the army-wide variolation order from here. Von Steuben's training program transformed army discipline during the winter.",
+    dataFlag:"BEST DISEASE ESTIMATE in dataset; high confidence; bounded",
+    abppId:"",
+    sourceShort:"AMEDD Gillett Ch.4; Fenn 2001; NPS Valley Forge",
+    citationUrl:"https://www.nps.gov/teachers/classrooms/vf-by-the-numbers.htm",
+    peckhamNote:""
+  },
+  {
+    name:"Monmouth",
+    region:"Mid-Atlantic",
+    subregion:"New Jersey",
+    cat:"battle",
+    date:"28 June 1778",
+    victor:"Patriot (tactical draw)",
+    lat:40.2861,lon:-74.276,
+    severity:3,
+    amKilled:69,
+    amWounded:161,
+    brKilled:65,
+    brWounded:170,
+    totalDead:134,
+    totalWounded:331,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:2,
+    disEvidenceLabel:"Battle-specific heat/exhaustion mortality; infectious context broader",
+    geoDisZone:"Mid-Atlantic \u2014 summer heat, dysentery, respiratory infection",
+    pathogens:"Heatstroke (environmental, non-infectious), dysentery, respiratory infection",
+    inocRelevant:false,
+    finding:"Notable for lethal heat mortality layered on combat. Soldiers fell dead from heat exhaustion in ~100\u00b0F conditions \u2014 a distinct environmental health hazard from the chronic camp-disease complex.",
+    diseaseNote:"Peckham: 69 Am, 65 Br killed (combat). Additional heat-exhaustion deaths unquantified but recorded in period accounts. Not primarily an infectious disease battle.",
+    histNotes:"Last major battle in the north. Charles Lee court-martialed for disordered retreat.",
+    dataFlag:"combat deaths reliable; heat deaths unquantified but real; infectious disease contextual",
+    abppId:"MONM",
+    sourceShort:"Peckham 1974",
+    citationUrl:"https://www.battlefields.org/learn/revolutionary-war/battles/monmouth",
+    peckhamNote:""
+  },
+  {
+    name:"Morristown (Encampment)",
+    region:"Mid-Atlantic",
+    subregion:"New Jersey",
+    cat:"encampment",
+    date:"Winters 1777 and 1779\u20131780",
+    victor:"",
+    lat:40.7968,lon:-74.4815,
+    severity:4,
+    amKilled:0,
+    amWounded:0,
+    brKilled:0,
+    brWounded:0,
+    totalDead:0,
+    totalWounded:0,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:3,
+    disEvidenceLabel:"Encampment-level disease burden; precise count not established",
+    geoDisZone:"Mid-Atlantic winter \u2014 typhus, dysentery, respiratory disease, scurvy",
+    pathogens:"Typhus, dysentery, smallpox (residual), respiratory disease, scurvy",
+    inocRelevant:true,
+    finding:"Second major American encampment disease site. The 1779\u201380 winter was one of the coldest of the century; repeated cycles of typhus, dysentery, and respiratory infection under extreme cold and supply failure.",
+    diseaseNote:"No consensus death count equivalent to Valley Forge's muster analysis. AMEDD and NPS Morristown document the severe health crisis.",
+    histNotes:"Two encampment winters. The 1779\u201380 winter saw mutinies driven by starvation and supply failure.",
+    dataFlag:"disease burden documented but precise count not established; medium confidence",
+    abppId:"",
+    sourceShort:"AMEDD Gillett; NPS Morristown",
+    citationUrl:"https://www.nps.gov/morr/index.htm",
+    peckhamNote:""
+  },
+  {
+    name:"New York Prison Ships",
+    region:"Mid-Atlantic",
+    subregion:"New York Harbor (Wallabout Bay)",
+    cat:"prison",
+    date:"1776\u20131783",
+    victor:"British",
+    lat:40.7009,lon:-73.9731,
+    severity:5,
+    amKilled:0,
+    amWounded:0,
+    brKilled:0,
+    brWounded:0,
+    totalDead:0,
+    totalWounded:0,
+    disLow:11000,
+    disHigh:11500,
+    disRange:"11,000\u201311,500",
+    disTier:4,
+    disEvidenceLabel:"Site-level bounded estimate \u2014 highest disease-death concentration of the war",
+    geoDisZone:"Confined shipboard \u2014 dysentery, smallpox, typhus, yellow fever, starvation",
+    pathogens:"Dysentery, smallpox, typhus (jail fever), yellow fever, starvation-linked infection",
+    inocRelevant:false,
+    finding:"The HMS Jersey and other prison hulks in Wallabout Bay killed more Americans than all battlefield engagements of the war combined. Dysentery, typhus, smallpox, and starvation-linked infection drove the toll.",
+    diseaseNote:"Burrows (2008) estimates 11,000\u201311,500 total prisoner deaths. USNI (1935) describes the Jersey's conditions. Causes: dysentery dominant, smallpox, typhus, yellow fever, starvation. Bodies buried in shallow graves along the shore.",
+    histNotes:"The Prison Ship Martyrs' Monument in Fort Greene Park, Brooklyn, contains the remains of ~11,500 prisoners.",
+    dataFlag:"HIGHEST TOTAL MORTALITY SITE in dataset; high confidence bounded estimate",
+    abppId:"",
+    sourceShort:"Burrows 2008 Forgotten Patriots; USNI 1935",
+    citationUrl:"https://www.usni.org/magazines/proceedings/1935/march/new-york-prison-ships-american-revolution",
+    peckhamNote:""
+  },
+  {
+    name:"Springfield",
+    region:"Mid-Atlantic",
+    subregion:"New Jersey",
+    cat:"battle",
+    date:"23 June 1780",
+    victor:"Patriot",
+    lat:40.7032,lon:-74.3296,
+    severity:2,
+    amKilled:64,
+    amWounded:60,
+    brKilled:128,
+    brWounded:300,
+    totalDead:192,
+    totalWounded:360,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:1,
+    disEvidenceLabel:"Campaign-level context",
+    geoDisZone:"Mid-Atlantic \u2014 dysentery, camp fevers",
+    pathogens:"Dysentery, camp fevers",
+    inocRelevant:false,
+    finding:"One of the last significant British raids into New Jersey; disease continued to erode troop strength throughout 1780 in the mid-Atlantic theater.",
+    diseaseNote:"Peckham: 64 Am, 128 Br killed. No battle-specific disease count.",
+    histNotes:"British burned most of Springfield during the raid.",
+    dataFlag:"combat deaths reliable; disease contextual only",
+    abppId:"SPRI",
+    sourceShort:"Peckham 1974",
+    citationUrl:"https://www.battlefields.org/learn/revolutionary-war/battles/springfield",
+    peckhamNote:""
+  },
+  {
+    name:"Oriskany",
+    region:"Hudson Valley",
+    subregion:"New York (Mohawk Valley)",
+    cat:"battle",
+    date:"6 Aug 1777",
+    victor:"Draw (American strategic success)",
+    lat:43.1548,lon:-75.3641,
+    severity:4,
+    amKilled:147,
+    amWounded:100,
+    brKilled:93,
+    brWounded:50,
+    totalDead:240,
+    totalWounded:150,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:1,
+    disEvidenceLabel:"Campaign-level context",
+    geoDisZone:"New York frontier \u2014 dysentery, typhus, summer fevers",
+    pathogens:"Dysentery, typhus",
+    inocRelevant:false,
+    finding:"Bloodiest engagement per troop engaged in the war. Oneida Patriots fighting Mohawk Loyalists adds a civil-war dimension in a region already stressed by displacement and disease.",
+    diseaseNote:"Peckham: 147 Am, 93 Br/Loyalist killed. No battle-specific disease count.",
+    histNotes:"Part of the Saratoga campaign; Herkimer mortally wounded. Battle relieved pressure on Fort Stanwix.",
+    dataFlag:"combat deaths reliable; disease contextual only",
+    abppId:"ORIS",
+    sourceShort:"Peckham 1974; Graymont 1972",
+    citationUrl:"https://www.battlefields.org/learn/revolutionary-war/battles/oriskany",
+    peckhamNote:""
+  },
+  {
+    name:"Bennington",
+    region:"Hudson Valley",
+    subregion:"Vermont / New York",
+    cat:"battle",
+    date:"16 Aug 1777",
+    victor:"Patriot",
+    lat:42.8748,lon:-73.2137,
+    severity:3,
+    amKilled:40,
+    amWounded:30,
+    brKilled:207,
+    brWounded:700,
+    totalDead:247,
+    totalWounded:730,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:1,
+    disEvidenceLabel:"Campaign-level context",
+    geoDisZone:"New England / Hudson Valley \u2014 dysentery, typhus",
+    pathogens:"Dysentery, typhus",
+    inocRelevant:false,
+    finding:"A decisive Patriot victory that wrecked Burgoyne's foraging raid and contributed directly to the Saratoga surrender. Disproportionately costly for the British/Hessian force.",
+    diseaseNote:"Peckham: 40 Am, 207 Br/Hessian killed. No battle-specific disease count.",
+    histNotes:"Green Mountain Boys and New Hampshire militia under Stark defeated Hessian regulars and Loyalist rangers.",
+    dataFlag:"combat deaths reliable; disease contextual only",
+    abppId:"BENN",
+    sourceShort:"Peckham 1974",
+    citationUrl:"https://www.battlefields.org/learn/revolutionary-war/battles/bennington",
+    peckhamNote:""
+  },
+  {
+    name:"Freeman's Farm (1st Saratoga)",
+    region:"Hudson Valley",
+    subregion:"New York",
+    cat:"battle",
+    date:"19 Sept 1777",
+    victor:"British (tactical) / American (strategic)",
+    lat:43.0262,lon:-73.634,
+    severity:4,
+    amKilled:65,
+    amWounded:218,
+    brKilled:600,
+    brWounded:1200,
+    totalDead:665,
+    totalWounded:1418,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:1,
+    disEvidenceLabel:"Campaign-level context",
+    geoDisZone:"Hudson Valley \u2014 dysentery, camp fevers, respiratory disease",
+    pathogens:"Dysentery, camp fevers, respiratory disease",
+    inocRelevant:false,
+    finding:"Among the highest British single-day battle deaths in the entire war. Burgoyne's army was being bled dry even as it advanced.",
+    diseaseNote:"Peckham: 65 Am, 600 Br killed. No battle-specific disease count.",
+    histNotes:"First of two Saratoga battles; both armies camped near each other for weeks between engagements, increasing disease risk.",
+    dataFlag:"combat deaths reliable; disease contextual only",
+    abppId:"SARA",
+    sourceShort:"Peckham 1974",
+    citationUrl:"https://www.battlefields.org/learn/revolutionary-war/battles/saratoga",
+    peckhamNote:""
+  },
+  {
+    name:"Bemis Heights (2nd Saratoga)",
+    region:"Hudson Valley",
+    subregion:"New York",
+    cat:"battle",
+    date:"7 Oct 1777",
+    victor:"Patriot",
+    lat:43.0462,lon:-73.648,
+    severity:3,
+    amKilled:130,
+    amWounded:300,
+    brKilled:260,
+    brWounded:700,
+    totalDead:390,
+    totalWounded:1000,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:1,
+    disEvidenceLabel:"Campaign-level context",
+    geoDisZone:"Hudson Valley \u2014 dysentery, typhus",
+    pathogens:"Dysentery, typhus",
+    inocRelevant:false,
+    finding:"Sealed Burgoyne's defeat and the strategic turning point of the war. The three-week gap between battles exposed both armies to camp disease attrition.",
+    diseaseNote:"Peckham: 130 Am, 260 Br killed. No battle-specific disease count.",
+    histNotes:"Burgoyne surrendered ~5,700 men on 17 Oct 1777 \u2014 the event that brought France into the war.",
+    dataFlag:"combat deaths reliable; disease contextual only",
+    abppId:"SARA",
+    sourceShort:"Peckham 1974",
+    citationUrl:"https://www.battlefields.org/learn/revolutionary-war/battles/saratoga",
+    peckhamNote:""
+  },
+  {
+    name:"Forts Clinton & Montgomery",
+    region:"Hudson Valley",
+    subregion:"New York (Hudson Highlands)",
+    cat:"battle",
+    date:"6 Oct 1777",
+    victor:"British",
+    lat:41.3887,lon:-74.0071,
+    severity:3,
+    amKilled:150,
+    amWounded:100,
+    brKilled:183,
+    brWounded:375,
+    totalDead:333,
+    totalWounded:475,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:1,
+    disEvidenceLabel:"Campaign-level context",
+    geoDisZone:"Hudson Highlands \u2014 dysentery, camp fever",
+    pathogens:"Dysentery, camp fever",
+    inocRelevant:false,
+    finding:"Twin fortress assaults in the British push to relieve Burgoyne; arrived too late to change the Saratoga outcome.",
+    diseaseNote:"Peckham: 150 Am, 183 Br killed. No battle-specific disease count.",
+    histNotes:"British broke the Hudson River chain and burned Kingston, NY.",
+    dataFlag:"combat deaths reliable; disease contextual only",
+    abppId:"",
+    sourceShort:"Peckham 1974",
+    citationUrl:"https://allthingsliberty.com/2014/05/the-25-deadliest-battles-of-the-revolutionary-war/",
+    peckhamNote:""
+  },
+  {
+    name:"Wyoming Valley Massacre",
+    region:"Hudson Valley",
+    subregion:"Pennsylvania (Wyoming Valley)",
+    cat:"battle",
+    date:"3 July 1778",
+    victor:"British/Loyalist",
+    lat:41.2459,lon:-75.8813,
+    severity:4,
+    amKilled:227,
+    amWounded:100,
+    brKilled:11,
+    brWounded:20,
+    totalDead:238,
+    totalWounded:120,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:1,
+    disEvidenceLabel:"Campaign-level context",
+    geoDisZone:"Pennsylvania frontier \u2014 dysentery, typhoid-like fevers, typhus",
+    pathogens:"Dysentery, typhoid-like fevers, typhus",
+    inocRelevant:false,
+    finding:"One of the most devastating frontier massacres of the war; the civilian and militia deaths shocked the colonies and triggered the Sullivan-Clinton punitive campaign of 1779.",
+    diseaseNote:"Peckham: 227 Am, 11 Br killed. No disease-specific count.",
+    histNotes:"Col. John Butler's Rangers and Seneca warriors defeated Connecticut militia defending the Wyoming Valley settlements.",
+    dataFlag:"combat deaths reliable; disease contextual only",
+    abppId:"",
+    sourceShort:"Peckham 1974",
+    citationUrl:"https://allthingsliberty.com/2014/05/the-25-deadliest-battles-of-the-revolutionary-war/",
+    peckhamNote:""
+  },
+  {
+    name:"Moore's Creek Bridge",
+    region:"South",
+    subregion:"North Carolina",
+    cat:"battle",
+    date:"27 Feb 1776",
+    victor:"Patriot",
+    lat:34.456,lon:-78.1085,
+    severity:2,
+    amKilled:1,
+    amWounded:1,
+    brKilled:50,
+    brWounded:20,
+    totalDead:51,
+    totalWounded:21,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:1,
+    disEvidenceLabel:"Campaign-level context",
+    geoDisZone:"North Carolina coastal plain \u2014 low-level malaria, dysentery",
+    pathogens:"Malaria, dysentery",
+    inocRelevant:false,
+    finding:"The first decisive Patriot victory in the South, crushing the Scottish Loyalist uprising before it could link up with British naval forces. Epidemiologically marks the southern theater's opening.",
+    diseaseNote:"Very low combat deaths. Disease context is the general NC coastal plain environment; not a significant disease event.",
+    histNotes:"Highland Scots Loyalists defeated by Patriot militia; suppressed British plans for an early southern campaign.",
+    dataFlag:"low mortality battle; disease contextual only",
+    abppId:"MOCR",
+    sourceShort:"Peckham 1974",
+    citationUrl:"https://www.battlefields.org/learn/revolutionary-war/battles/moores-creek",
+    peckhamNote:""
+  },
+  {
+    name:"Sullivan's Island (Fort Moultrie)",
+    region:"South",
+    subregion:"South Carolina",
+    cat:"battle",
+    date:"28 June 1776",
+    victor:"Patriot",
+    lat:32.7627,lon:-79.8575,
+    severity:3,
+    amKilled:37,
+    amWounded:71,
+    brKilled:225,
+    brWounded:430,
+    totalDead:262,
+    totalWounded:501,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:2,
+    disEvidenceLabel:"Theater-level malaria context",
+    geoDisZone:"SC lowcountry \u2014 malaria-endemic, yellow fever risk",
+    pathogens:"Malaria (Plasmodium falciparum, P. vivax), yellow fever, dysentery",
+    inocRelevant:false,
+    finding:"A Patriot defense that repelled the British fleet and delayed the southern campaign by four years. The Charleston lowcountry was already a malaria-hyperendemic zone; the summer timing maximized disease risk for operating forces.",
+    diseaseNote:"Peckham: 37 Am, 225 Br killed. The British fleet suffered heavily in battle; disease adds background risk in the SC lowcountry summer.",
+    histNotes:"Col. Moultrie's palmetto-log fort absorbed British naval fire. The palmetto tree became the South Carolina state symbol.",
+    dataFlag:"combat deaths reliable; disease theater-level context",
+    abppId:"",
+    sourceShort:"Peckham 1974; McNeill 2010",
+    citationUrl:"https://www.battlefields.org/learn/revolutionary-war/battles/fort-moultrie",
+    peckhamNote:""
+  },
+  {
+    name:"Kettle Creek",
+    region:"South",
+    subregion:"Georgia",
+    cat:"battle",
+    date:"14 Feb 1779",
+    victor:"Patriot",
+    lat:33.881,lon:-83.0396,
+    severity:2,
+    amKilled:9,
+    amWounded:23,
+    brKilled:70,
+    brWounded:40,
+    totalDead:79,
+    totalWounded:63,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:2,
+    disEvidenceLabel:"Theater-level malaria context",
+    geoDisZone:"Georgia Piedmont \u2014 moderate malaria, dysentery",
+    pathogens:"Malaria, dysentery",
+    inocRelevant:false,
+    finding:"A sharp Patriot ambush of Loyalist recruits in the Georgia backcountry. Lower malaria intensity than coastal Georgia but still relevant disease context for winter-spring campaigning.",
+    diseaseNote:"Peckham: 9 Am, 70 Br/Loyalist killed. The Georgia interior had lower malaria intensity than coastal areas.",
+    histNotes:"Col. Andrew Pickens surprised and scattered Loyalist force marching to join British forces in Augusta.",
+    dataFlag:"low mortality battle; disease theater-level context",
+    abppId:"",
+    sourceShort:"Peckham 1974; McNeill 2010",
+    citationUrl:"https://allthingsliberty.com/2014/05/the-25-deadliest-battles-of-the-revolutionary-war/",
+    peckhamNote:""
+  },
+  {
+    name:"Brier Creek",
+    region:"South",
+    subregion:"Georgia",
+    cat:"battle",
+    date:"3 Mar 1779",
+    victor:"British",
+    lat:33.0432,lon:-81.8823,
+    severity:4,
+    amKilled:150,
+    amWounded:50,
+    brKilled:16,
+    brWounded:5,
+    totalDead:166,
+    totalWounded:55,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:2,
+    disEvidenceLabel:"Theater-level malaria context",
+    geoDisZone:"Georgia lowcountry \u2014 Plasmodium falciparum and P. vivax hyperendemic",
+    pathogens:"Malaria (Plasmodium falciparum, P. vivax), dysentery",
+    inocRelevant:false,
+    finding:"A sharp American defeat at the Savannah River. The bottomland ecology made sustained campaigning here a guarantee of malaria attrition on top of battle losses.",
+    diseaseNote:"Peckham: 150 Am, 16 Br killed. The Savannah River lowcountry is documented as one of the most malaria-endemic environments in 18th-century North America (McNeill 2010; PMC1863584).",
+    histNotes:"British surprise attack scattered American forces; 22nd deadliest Am-loss engagement.",
+    dataFlag:"combat deaths reliable; disease theater-level estimate",
+    abppId:"",
+    sourceShort:"Peckham 1974; McNeill 2010; PMC1863584",
+    citationUrl:"https://pmc.ncbi.nlm.nih.gov/articles/PMC1863584/",
+    peckhamNote:""
+  },
+  {
+    name:"Siege of Savannah",
+    region:"South",
+    subregion:"Georgia",
+    cat:"siege",
+    date:"Sept\u2013Oct 1779",
+    victor:"British",
+    lat:32.0809,lon:-81.0912,
+    severity:5,
+    amKilled:457,
+    amWounded:880,
+    brKilled:103,
+    brWounded:189,
+    totalDead:560,
+    totalWounded:1069,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:3,
+    disEvidenceLabel:"Strong theater-level malaria ecology context",
+    geoDisZone:"Georgia coastal lowcountry \u2014 malaria hyperendemic, yellow fever risk",
+    pathogens:"Malaria, yellow fever (risk), dysentery, typhus",
+    inocRelevant:false,
+    finding:"5th costliest by American deaths (Peckham). The Franco-American assault on the Spring Hill Redoubt (Oct 9) was a tactical disaster. The lowcountry's malaria ecology was a standing lethal background throughout the Georgia campaign.",
+    diseaseNote:"Peckham: 457 Am, 103 Br killed. McNeill (2010) documents the malaria burden in coastal Georgia as hyperendemic. PMC1863584 provides the most rigorous analysis of southern theater disease.",
+    histNotes:"Count Pulaski killed. D'Estaing wounded. The failed assault ended French cooperation and left Savannah in British hands for years.",
+    dataFlag:"combat deaths reliable; disease strong theater-level context",
+    abppId:"SAVA",
+    sourceShort:"Peckham 1974; McNeill 2010; PMC1863584",
+    citationUrl:"https://pmc.ncbi.nlm.nih.gov/articles/PMC1863584/",
+    peckhamNote:""
+  },
+  {
+    name:"Stono Ferry",
+    region:"South",
+    subregion:"South Carolina",
+    cat:"battle",
+    date:"20 June 1779",
+    victor:"British",
+    lat:32.6813,lon:-80.0731,
+    severity:3,
+    amKilled:147,
+    amWounded:189,
+    brKilled:119,
+    brWounded:149,
+    totalDead:266,
+    totalWounded:338,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:2,
+    disEvidenceLabel:"Theater-level malaria context",
+    geoDisZone:"SC coastal lowcountry \u2014 malaria hyperendemic, peak summer transmission",
+    pathogens:"Malaria, dysentery",
+    inocRelevant:false,
+    finding:"Summer combat in the SC lowcountry's peak malaria transmission season; the marsh environment made disease attrition near-certain for both armies.",
+    diseaseNote:"Peckham: 147 Am, 119 Br killed. Summer (June) fighting in coastal SC marshes = peak Plasmodium transmission window.",
+    histNotes:"American attempt to dislodge British from James Island repulsed.",
+    dataFlag:"combat deaths reliable; disease theater-level context",
+    abppId:"",
+    sourceShort:"Peckham 1974; McNeill 2010",
+    citationUrl:"https://pmc.ncbi.nlm.nih.gov/articles/PMC1863584/",
+    peckhamNote:""
+  },
+  {
+    name:"Siege of Charleston",
+    region:"South",
+    subregion:"South Carolina",
+    cat:"siege",
+    date:"1780",
+    victor:"British",
+    lat:32.7765,lon:-79.9311,
+    severity:5,
+    amKilled:227,
+    amWounded:260,
+    brKilled:265,
+    brWounded:400,
+    totalDead:492,
+    totalWounded:660,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:3,
+    disEvidenceLabel:"Strong theater-level disease burden; Peckham combat count for May 12 only",
+    geoDisZone:"SC coastal lowcountry \u2014 malaria hyperendemic, smallpox, typhus, typhoid",
+    pathogens:"Malaria, smallpox, dysentery, typhus or typhoid fevers",
+    inocRelevant:true,
+    finding:"Largest American surrender of the war (~5,400 captured). The Charleston lowcountry was one of the most disease-intensive environments of the entire conflict; malaria, enteric disease, and smallpox all circulated during and after the siege.",
+    diseaseNote:"Peckham: combat losses for the May 12 engagement specifically. Full siege period and prisoner captivity mortality was considerably higher. PMC1863584 provides detailed analysis of disease in the southern campaign.",
+    histNotes:"Clinton's capture of Charleston opened the southern theater. The ~5,400 captured included General Lincoln and the entire Southern Army.",
+    dataFlag:"combat deaths reliable for May 12 only; total disease burden is campaign-level",
+    abppId:"CHAR",
+    sourceShort:"Peckham 1974; McNeill 2010; PMC1863584",
+    citationUrl:"https://pmc.ncbi.nlm.nih.gov/articles/PMC1863584/",
+    peckhamNote:""
+  },
+  {
+    name:"Waxhaws (Buford's Massacre)",
+    region:"South",
+    subregion:"South Carolina",
+    cat:"battle",
+    date:"29 May 1780",
+    victor:"British",
+    lat:34.7993,lon:-80.7487,
+    severity:4,
+    amKilled:263,
+    amWounded:100,
+    brKilled:17,
+    brWounded:17,
+    totalDead:280,
+    totalWounded:117,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:1,
+    disEvidenceLabel:"Campaign-level context",
+    geoDisZone:"SC Piedmont \u2014 moderate malaria, dysentery",
+    pathogens:"Malaria, dysentery",
+    inocRelevant:false,
+    finding:"'Tarleton's Quarter' \u2014 brutal slaughter of surrendering Continentals. 12th deadliest American-loss engagement; it inflamed patriot resistance across the South.",
+    diseaseNote:"Peckham: 263 Am, 17 Br killed.",
+    histNotes:"Col. Tarleton's Loyalist cavalry refused quarter to surrendering Americans. The battle cry 'Tarleton's Quarter' galvanized the southern resistance.",
+    dataFlag:"combat deaths reliable; disease contextual only",
+    abppId:"",
+    sourceShort:"Peckham 1974",
+    citationUrl:"https://allthingsliberty.com/2014/05/the-25-deadliest-battles-of-the-revolutionary-war/",
+    peckhamNote:""
+  },
+  {
+    name:"Camden",
+    region:"South",
+    subregion:"South Carolina",
+    cat:"battle",
+    date:"16 Aug 1780",
+    victor:"British",
+    lat:34.2465,lon:-80.607,
+    severity:5,
+    amKilled:900,
+    amWounded:1000,
+    brKilled:314,
+    brWounded:0,
+    totalDead:1214,
+    totalWounded:1000,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:3,
+    disEvidenceLabel:"Strong campaign-level southern disease context",
+    geoDisZone:"SC lowcountry-Piedmont interface \u2014 malaria, dysentery",
+    pathogens:"Malaria, dysentery, camp fevers",
+    inocRelevant:false,
+    finding:"The single most catastrophic American battlefield defeat of the war \u2014 #1 by Peckham's ranking. Gates's army was already disease-weakened before facing Cornwallis; troops fed green corn and molasses the night before, triggering dysentery.",
+    diseaseNote:"Peckham: ~900 Am, 314 Br killed/wounded. General Gates himself noted his army's sickly state. The pre-battle diet controversy (green corn + molasses) may have exacerbated dysentery acutely. PMC1863584 documents the broader malaria context.",
+    histNotes:"American rout; Gates famously fled 60 miles to Charlotte. Cornwallis's greatest triumph but the beginning of his unsustainable southward campaign.",
+    dataFlag:"highest American combat death count in dataset; disease burden strong campaign-level evidence",
+    abppId:"CAMD",
+    sourceShort:"Peckham 1974; PMC1863584; McNeill 2010",
+    citationUrl:"https://pmc.ncbi.nlm.nih.gov/articles/PMC1863584/",
+    peckhamNote:""
+  },
+  {
+    name:"Fishing Creek",
+    region:"South",
+    subregion:"South Carolina",
+    cat:"battle",
+    date:"18 Aug 1780",
+    victor:"British",
+    lat:34.6293,lon:-80.8906,
+    severity:3,
+    amKilled:150,
+    amWounded:100,
+    brKilled:16,
+    brWounded:5,
+    totalDead:166,
+    totalWounded:105,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:1,
+    disEvidenceLabel:"Campaign-level context",
+    geoDisZone:"SC Piedmont \u2014 malaria, dysentery",
+    pathogens:"Malaria, dysentery",
+    inocRelevant:false,
+    finding:"A devastating follow-up rout to Camden two days later. Part of the nadir of the American southern cause; disease and defeat compounded each other.",
+    diseaseNote:"Peckham: 150 Am, 16 Br killed.",
+    histNotes:"Tarleton surprised Sumter's force resting along Fishing Creek.",
+    dataFlag:"combat deaths reliable; disease contextual only",
+    abppId:"",
+    sourceShort:"Peckham 1974",
+    citationUrl:"https://allthingsliberty.com/2014/05/the-25-deadliest-battles-of-the-revolutionary-war/",
+    peckhamNote:""
+  },
+  {
+    name:"Kings Mountain",
+    region:"South",
+    subregion:"North Carolina / South Carolina border",
+    cat:"battle",
+    date:"7 Oct 1780",
+    victor:"Patriot",
+    lat:35.1392,lon:-81.3802,
+    severity:3,
+    amKilled:90,
+    amWounded:163,
+    brKilled:157,
+    brWounded:163,
+    totalDead:247,
+    totalWounded:326,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:1,
+    disEvidenceLabel:"Regional context \u2014 lower malaria burden than coast",
+    geoDisZone:"Southern backcountry / Piedmont \u2014 lower malaria, dysentery",
+    pathogens:"Dysentery, typhus",
+    inocRelevant:false,
+    finding:"Decisive Patriot victory over Loyalist forces under Ferguson. Epidemiologically important as a contrast to lowcountry disease ecology \u2014 Piedmont and mountain environments had distinct and lower malaria profiles.",
+    diseaseNote:"Peckham: 90 Am (total), 157 Loyalist killed. Backcountry disease burden distinct from coastal zones.",
+    histNotes:"Overmountain Men killed or captured the entire Loyalist force. Ferguson was the only British regular present.",
+    dataFlag:"combat deaths reliable; disease contextual only",
+    abppId:"KIMO",
+    sourceShort:"Peckham 1974",
+    citationUrl:"https://www.battlefields.org/learn/revolutionary-war/battles/kings-mountain",
+    peckhamNote:""
+  },
+  {
+    name:"Ramsour's Mill",
+    region:"South",
+    subregion:"North Carolina",
+    cat:"battle",
+    date:"20 June 1780",
+    victor:"Patriot",
+    lat:35.5565,lon:-81.3682,
+    severity:3,
+    amKilled:170,
+    amWounded:100,
+    brKilled:150,
+    brWounded:100,
+    totalDead:320,
+    totalWounded:200,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:1,
+    disEvidenceLabel:"Campaign-level context",
+    geoDisZone:"NC Piedmont \u2014 dysentery, typhoid-like fevers",
+    pathogens:"Dysentery, typhoid-like fevers",
+    inocRelevant:false,
+    finding:"A fierce Patriot vs. Loyalist engagement in the NC backcountry, part of the brutal civil-war dimension of the southern conflict.",
+    diseaseNote:"Peckham: ~170 Am, ~150 Loyalist killed.",
+    histNotes:"Patriot militia under Locke attacked Loyalist camp.",
+    dataFlag:"combat deaths reliable; disease contextual only",
+    abppId:"",
+    sourceShort:"Peckham 1974",
+    citationUrl:"https://allthingsliberty.com/2014/05/the-25-deadliest-battles-of-the-revolutionary-war/",
+    peckhamNote:""
+  },
+  {
+    name:"Cowpens",
+    region:"South",
+    subregion:"South Carolina",
+    cat:"battle",
+    date:"17 Jan 1781",
+    victor:"Patriot",
+    lat:35.1314,lon:-81.8095,
+    severity:3,
+    amKilled:72,
+    amWounded:141,
+    brKilled:110,
+    brWounded:229,
+    totalDead:182,
+    totalWounded:370,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:1,
+    disEvidenceLabel:"Campaign-level southern context",
+    geoDisZone:"SC backcountry \u2014 moderate malaria, dysentery",
+    pathogens:"Malaria, dysentery",
+    inocRelevant:false,
+    finding:"A tactical masterpiece by Daniel Morgan using a double envelopment. Backcountry disease ecology was less severe than the coast, but SC armies still carried ongoing disease burdens.",
+    diseaseNote:"Peckham: 72 Am, ~110 Br killed.",
+    histNotes:"Morgan destroyed Tarleton's force; 86% British casualty rate. The turning point of the southern campaign.",
+    dataFlag:"combat deaths reliable; disease contextual only",
+    abppId:"COWP",
+    sourceShort:"Peckham 1974",
+    citationUrl:"https://www.battlefields.org/learn/revolutionary-war/battles/cowpens",
+    peckhamNote:""
+  },
+  {
+    name:"Guilford Courthouse",
+    region:"South",
+    subregion:"North Carolina",
+    cat:"battle",
+    date:"15 Mar 1781",
+    victor:"British (pyrrhic)",
+    lat:36.1317,lon:-79.8467,
+    severity:4,
+    amKilled:261,
+    amWounded:1000,
+    brKilled:506,
+    brWounded:600,
+    totalDead:767,
+    totalWounded:1600,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:2,
+    disEvidenceLabel:"Campaign-level southern disease context",
+    geoDisZone:"NC Piedmont \u2014 malaria, dysentery, camp fevers",
+    pathogens:"Malaria, dysentery, camp fevers",
+    inocRelevant:false,
+    finding:"British tactical victory but operationally crippling \u2014 Cornwallis lost 27% of his force. Disease-and-combat attrition accumulated throughout the southern campaign; Charles James Fox said 'another such victory would ruin the British Army.'",
+    diseaseNote:"Peckham: 261 Am, 506 Br killed. Among the highest British-loss battles of the war. Campaign disease context substantial.",
+    histNotes:"After Guilford, Cornwallis marched to Virginia, abandoning the Carolinas \u2014 the strategic decision that led to Yorktown.",
+    dataFlag:"combat deaths reliable; disease campaign-level context",
+    abppId:"GUIC",
+    sourceShort:"Peckham 1974",
+    citationUrl:"https://www.battlefields.org/learn/revolutionary-war/battles/guilford-courthouse",
+    peckhamNote:""
+  },
+  {
+    name:"Hobkirk's Hill",
+    region:"South",
+    subregion:"South Carolina",
+    cat:"battle",
+    date:"25 Apr 1781",
+    victor:"British",
+    lat:34.2574,lon:-80.6218,
+    severity:3,
+    amKilled:126,
+    amWounded:203,
+    brKilled:39,
+    brWounded:222,
+    totalDead:165,
+    totalWounded:425,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:2,
+    disEvidenceLabel:"Theater-level malaria context",
+    geoDisZone:"SC lowcountry-Piedmont \u2014 malaria, dysentery",
+    pathogens:"Malaria, dysentery",
+    inocRelevant:false,
+    finding:"A defeat for Nathanael Greene near Camden, in territory where the lowcountry disease burden was ongoing into spring 1781.",
+    diseaseNote:"Peckham: 126 Am, 39 Br killed.",
+    histNotes:"Greene's army driven off but the British could not hold their position.",
+    dataFlag:"combat deaths reliable; disease theater-level context",
+    abppId:"",
+    sourceShort:"Peckham 1974",
+    citationUrl:"https://allthingsliberty.com/2014/05/the-25-deadliest-battles-of-the-revolutionary-war/",
+    peckhamNote:""
+  },
+  {
+    name:"Ninety Six (Siege)",
+    region:"South",
+    subregion:"South Carolina",
+    cat:"siege",
+    date:"22 May \u2013 19 June 1781",
+    victor:"British (operational)",
+    lat:34.1757,lon:-81.9215,
+    severity:3,
+    amKilled:57,
+    amWounded:70,
+    brKilled:85,
+    brWounded:116,
+    totalDead:142,
+    totalWounded:186,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:1,
+    disEvidenceLabel:"Campaign-level context",
+    geoDisZone:"SC interior \u2014 moderate malaria, dysentery in warm season",
+    pathogens:"Malaria, dysentery",
+    inocRelevant:false,
+    finding:"A lengthy Patriot siege of a Loyalist stronghold; prolonged siege conditions elevated enteric disease risk. The interior of SC had lower malaria intensity than the coast.",
+    diseaseNote:"Peckham: 57 Am, 85 Br killed.",
+    histNotes:"Greene withdrew before Rawdon's relief force arrived.",
+    dataFlag:"combat deaths reliable; disease contextual only",
+    abppId:"",
+    sourceShort:"Peckham 1974",
+    citationUrl:"https://allthingsliberty.com/2014/05/the-25-deadliest-battles-of-the-revolutionary-war/",
+    peckhamNote:""
+  },
+  {
+    name:"Eutaw Springs",
+    region:"South",
+    subregion:"South Carolina",
+    cat:"battle",
+    date:"8 Sept 1781",
+    victor:"Draw (British held field)",
+    lat:33.536,lon:-80.3462,
+    severity:4,
+    amKilled:139,
+    amWounded:375,
+    brKilled:85,
+    brWounded:351,
+    totalDead:224,
+    totalWounded:726,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:2,
+    disEvidenceLabel:"Theater-level malaria context",
+    geoDisZone:"SC coastal plain \u2014 malaria hyperendemic, late-summer peak",
+    pathogens:"Malaria, dysentery, camp fevers",
+    inocRelevant:false,
+    finding:"Last major battle of the southern campaign; 4th deadliest by total Peckham casualties. Fought in one of the most malaria-endemic zones of North America at the peak late-summer transmission window.",
+    diseaseNote:"Peckham: 513 total casualties (139 Am, 85 Br killed). September in coastal SC = peak Plasmodium transmission.",
+    histNotes:"Both sides claimed victory; the British abandoned the field but not the region. Effectively ended large-scale southern operations.",
+    dataFlag:"combat deaths reliable; disease theater-level context",
+    abppId:"EUSP",
+    sourceShort:"Peckham 1974; McNeill 2010",
+    citationUrl:"https://pmc.ncbi.nlm.nih.gov/articles/PMC1863584/",
+    peckhamNote:""
+  },
+  {
+    name:"Green Spring",
+    region:"Virginia",
+    subregion:"Virginia (Tidewater)",
+    cat:"battle",
+    date:"6 July 1781",
+    victor:"British (tactical)",
+    lat:37.3579,lon:-76.8113,
+    severity:2,
+    amKilled:75,
+    amWounded:100,
+    brKilled:75,
+    brWounded:75,
+    totalDead:150,
+    totalWounded:175,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:2,
+    disEvidenceLabel:"Theater-level malaria context",
+    geoDisZone:"Virginia tidewater \u2014 malaria, dysentery",
+    pathogens:"Malaria, dysentery, typhus",
+    inocRelevant:false,
+    finding:"A sharp engagement in tidewater Virginia as Cornwallis pursued Lafayette toward the coast; fought in a malaria-endemic environment in the peak summer transmission season.",
+    diseaseNote:"Lafayette's force engaged Cornwallis's rearguard near Jamestown Ford. Exact casualties approximate.",
+    histNotes:"Cornwallis attempted to trap Lafayette's smaller force. The retreat toward Yorktown began shortly after.",
+    dataFlag:"combat deaths approximate; disease theater-level context",
+    abppId:"",
+    sourceShort:"Peckham 1974 (approximate)",
+    citationUrl:"https://www.battlefields.org/learn/revolutionary-war/battles/green-spring",
+    peckhamNote:""
+  },
+  {
+    name:"Yorktown (Siege)",
+    region:"Virginia",
+    subregion:"Virginia (Tidewater)",
+    cat:"siege",
+    date:"28 Sept \u2013 19 Oct 1781",
+    victor:"Patriot / French",
+    lat:37.2388,lon:-76.5097,
+    severity:4,
+    amKilled:72,
+    amWounded:180,
+    brKilled:156,
+    brWounded:326,
+    totalDead:228,
+    totalWounded:506,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:1,
+    disEvidenceLabel:"Campaign-level context; lower disease burden than extended sieges",
+    geoDisZone:"Virginia tidewater \u2014 malaria, dysentery, typhus",
+    pathogens:"Malaria, dysentery, typhus",
+    inocRelevant:false,
+    finding:"The war-ending siege. Virginia tidewater was malaria-endemic but the siege's brevity (3 weeks) limited disease accumulation compared with longer-duration operations.",
+    diseaseNote:"Peckham: 72 Am, 156 Br killed. The ~8,000 British surrender effectively ended the war.",
+    histNotes:"Cornwallis surrendered on 19 Oct 1781. Fighting continued elsewhere until the 1783 Treaty of Paris.",
+    dataFlag:"combat deaths reliable; disease contextual only",
+    abppId:"YORK",
+    sourceShort:"Peckham 1974",
+    citationUrl:"https://www.battlefields.org/learn/revolutionary-war/battles/yorktown",
+    peckhamNote:""
+  },
+  {
+    name:"Groton Heights (Fort Griswold)",
+    region:"New England",
+    subregion:"Connecticut",
+    cat:"battle",
+    date:"6 Sept 1781",
+    victor:"British",
+    lat:41.3518,lon:-72.0932,
+    severity:3,
+    amKilled:85,
+    amWounded:60,
+    brKilled:50,
+    brWounded:144,
+    totalDead:135,
+    totalWounded:204,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:1,
+    disEvidenceLabel:"Campaign-level context",
+    geoDisZone:"New England coastal \u2014 dysentery, typhus",
+    pathogens:"Dysentery, typhus",
+    inocRelevant:false,
+    finding:"Benedict Arnold's raid on New London and Groton Heights \u2014 a massacre of surrendering American defenders. One of the last British raids on New England soil.",
+    diseaseNote:"Benedict Arnold led the raid. Col. Ledyard surrendered and was reportedly killed with his own sword.",
+    histNotes:"Arnold burned New London and the fort garrison was massacred after surrender.",
+    dataFlag:"combat deaths approximate; disease contextual only",
+    abppId:"",
+    sourceShort:"Peckham 1974",
+    citationUrl:"https://allthingsliberty.com/2014/05/the-25-deadliest-battles-of-the-revolutionary-war/",
+    peckhamNote:""
+  },
+  {
+    name:"Battle of Blue Licks",
+    region:"Frontier / Western",
+    subregion:"Kentucky",
+    cat:"battle",
+    date:"19 Aug 1782",
+    victor:"British / Loyalist / Shawnee",
+    lat:38.43,lon:-84.007,
+    severity:3,
+    amKilled:72,
+    amWounded:11,
+    brKilled:10,
+    brWounded:3,
+    totalDead:82,
+    totalWounded:14,
+    disLow:null,
+    disHigh:null,
+    disRange:"N/A",
+    disTier:1,
+    disEvidenceLabel:"Frontier disease context",
+    geoDisZone:"Kentucky frontier \u2014 waterborne disease (salt lick water sources), malaria, dysentery",
+    pathogens:"Dysentery, typhoid-like fevers (waterborne), malaria",
+    inocRelevant:false,
+    finding:"Regarded as the last significant land battle of the Revolutionary War, fought ~10 months after Yorktown. The Licking River salt lick crossing created heightened waterborne disease exposure for forces in the field.",
+    diseaseNote:"About 72 Kentucky militia killed including Col. John Todd. Daniel Boone's son Israel among the dead. Battle occurred after the preliminary peace treaty had been negotiated. Battlefields.org records ~72 Am killed.",
+    histNotes:"An ambush by Butler/Caldwell's rangers and Shawnee warriors. The battle occurred after Cornwallis had already surrendered at Yorktown.",
+    dataFlag:"combat deaths reliable; disease contextual only; last land battle of the war",
+    abppId:"BLLU",
+    sourceShort:"Battlefields.org; Draper MSS; Ky Military History",
+    citationUrl:"https://www.battlefields.org/learn/revolutionary-war/battles/blue-licks",
+    peckhamNote:""
+  }
+];
+const RC = {
+  'New England':'#c9a84c','Canada':'#a86fdf','Mid-Atlantic':'#4f98a3',
+  'Hudson Valley':'#5591c7','South':'#dd6974','Virginia':'#fdab43',
+  'Frontier / Western':'#6daa45'
+};
+const PIP_LABELS = ['Contextual','Regional','Campaign-level','Bounded estimate','Site-specific'];
+const TDARK = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19,attribution:'&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OSM</a> &copy; <a href="https://carto.com/attributions" target="_blank" rel="noopener noreferrer">CARTO</a>'});
+const TLIGHT = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19,attribution:'&copy; OSM &copy; CARTO'});
+const mkLD = ()=>L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19,opacity:0.5});
+const mkLL = ()=>L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19,opacity:0.8});
+const map = L.map('map',{center:[38.5,-78.0],zoom:5,zoomControl:false,attributionControl:false});
+TDARK.addTo(map);
+let curLabel=mkLD(); curLabel.addTo(map);
+L.control.zoom({position:'bottomright'}).addTo(map);
+L.control.attribution({position:'bottomleft',prefix:false}).addTo(map)
+  .addAttribution('Casualty data: Peckham 1974 &middot; Disease: Fenn 2001, McNeill 2010, PMC1863584, AMEDD');
+
+function sz(s){return [10,13,17,23,30][Math.min(s,5)-1]||13}
+
+function mkIcon(site,idx){
+  const col=RC[site.region]||'#aaa';
+  const s=sz(site.severity);
+  const cat=site.cat;
+  let shape;
+  if(cat==='prison'){
+    // Diamond shape for prison
+    shape=`<div class="bm" style="width:${s}px;height:${s}px;background:${col}22;border-color:${col};transform:rotate(45deg);border-radius:3px"><div style="transform:rotate(-45deg)"></div></div>`;
+  } else if(cat==='encampment'||cat==='disease_node'){
+    // Square with pulsing glow
+    shape=`<div class="dm" style="width:${s}px;height:${s}px;background:${col}22;border-color:${col};box-shadow:0 0 ${s}px ${col}55"><svg width="${s*.5}" height="${s*.5}" viewBox="0 0 12 12"><rect x="2" y="2" width="8" height="8" fill="${col}" opacity="0.9" rx="1"/></svg></div>`;
+  } else {
+    // Circle for battle/siege/campaign
+    shape=`<div class="bm" style="width:${s}px;height:${s}px;background:${col}22;border-color:${col};box-shadow:0 0 ${s/2}px ${col}44"><svg width="${s*.45}" height="${s*.45}" viewBox="0 0 12 12"><circle cx="6" cy="6" r="3.2" fill="${col}" opacity="0.92"/></svg></div>`;
+  }
+  return L.divIcon({className:'',iconSize:[s,s],iconAnchor:[s/2,s/2],popupAnchor:[0,-(s/2+4)],html:shape});
+}
+
+function fmtNum(v){return v!=null&&v!==0?Number(v).toLocaleString():'—'}
+function fmtDis(s){
+  if(s.disRange&&s.disRange!=='N/A'&&s.disRange.trim()!=='') return '~'+s.disRange;
+  if(s.disLow!=null&&s.disHigh!=null) return `~${Number(s.disLow).toLocaleString()}–${Number(s.disHigh).toLocaleString()}`;
+  return 'See panel';
+}
+
+function mkMarker(site,idx){
+  const m=L.marker([site.lat,site.lon],{icon:mkIcon(site,idx)});
+  m.siteData=site;
+  const col=RC[site.region]||'#aaa';
+  const p0=site.pathogens.split(',')[0].trim();
+  const popup=`<div class="pi">
+    <div class="pt" style="color:${col}">${site.region} &middot; ${site.cat}</div>
+    <div class="pn">${site.name}</div>
+    <div class="psg">
+      <div class="psc"><div class="psl">Am. killed</div><div class="psv">${fmtNum(site.amKilled)}</div></div>
+      <div class="psc"><div class="psl">Br. killed</div><div class="psv">${fmtNum(site.brKilled)}</div></div>
+      <div class="psc"><div class="psl">Disease deaths</div><div class="psv">${fmtDis(site)}</div></div>
+      <div class="psc"><div class="psl">Victor</div><div class="psv" style="font-size:.72rem">${site.victor||'—'}</div></div>
+    </div>
+    <div class="ppills">
+      <span class="ppill" style="color:${col};border-color:${col}44;background:${col}11">${site.cat}</span>
+      <span class="ppill" style="color:#dd6974;border-color:#dd697444;background:#dd697411">${p0}</span>
+      ${site.inocRelevant?'<span class="ppill" style="color:#a86fdf;border-color:rgba(168,111,223,.4);background:rgba(168,111,223,.1)">Inoculation-relevant</span>':''}
+    </div>
+    <button class="pcta" onclick="openPanel(${idx})">Full health &amp; disease data &#8594;</button>
+  </div>`;
+  m.bindPopup(popup,{maxWidth:290,className:'',autoPanPaddingTopLeft:[20,80]});
+  return m;
+}
+
+const mg=L.layerGroup().addTo(map);
+const AM=SITES.map((s,i)=>{const m=mkMarker(s,i);m.addTo(mg);return m;});
+
+// Campaign route lines
+const routes=[
+  [[42.45,-71.23],[42.38,-71.06]],
+  [[46.81,-71.21],[42.45,-71.23]],
+  [[40.85,-73.93],[40.61,-73.95],[41.03,-73.76],[43.15,-75.36],[43.05,-73.63],[43.05,-73.65],[41.39,-74.01]],
+  [[41.24,-75.88],[40.22,-74.76],[40.36,-74.67],[40.87,-74.48],[39.87,-75.55],[40.04,-75.49],[40.03,-75.18],[40.10,-75.46],[40.29,-74.28],[40.71,-74.33],[40.80,-74.48],[40.70,-74.07]],
+  [[32.08,-81.09],[32.78,-79.93],[33.05,-81.88],[34.25,-80.61],[34.80,-80.75],[34.63,-80.89],[35.56,-81.37],[35.14,-81.38],[35.13,-81.81],[36.13,-79.85],[34.26,-80.62],[37.24,-76.51]],
+  [[38.43,-84.01]]
+];
+routes.forEach(pts=>{if(pts.length>1)L.polyline(pts,{color:'rgba(201,168,76,.15)',weight:1.4,dashArray:'6 5',smoothFactor:1}).addTo(map);});
+
+// ABPP boundary layer (live attempt)
+fetch('https://services7.arcgis.com/KV6qP6Xy8Kh9VTB4/ArcGIS/rest/services/WASO_ABPP_NPS_Battlefield_Boundaries/FeatureServer/6/query?where=WAR+%3D+%27Revolutionary+War%27&outFields=SITE_NAME,STATE,BOUNDARY&returnGeometry=true&f=geojson')
+  .then(r=>r.json()).then(d=>{
+    L.geoJSON(d,{style:()=>({color:'#c9a84c',weight:1.2,opacity:0.45,fillColor:'#c9a84c',fillOpacity:0.04}),
+      onEachFeature:(f,l)=>{const p=f.properties||{};l.bindPopup(`<div class="pi"><div class="pt" style="color:#c9a84c">NPS ABPP Boundary</div><div class="pn">${p.SITE_NAME||'Battlefield'}</div><div style="font-size:.8rem;color:var(--txm)">${p.STATE||''}</div></div>`);}
+    }).addTo(map).bringToBack();
+  }).catch(()=>{});
+
+const panel=document.getElementById('panel');
+let hintHidden=false;
+const hint=document.getElementById('hint');
+
+function openPanel(idx){
+  const s=SITES[idx];
+  const col=RC[s.region]||'#c9a84c';
+  document.getElementById('p-theater').textContent=s.region;
+  document.getElementById('p-theater').style.color=col;
+  document.getElementById('p-title').innerHTML=s.name+(s.inocRelevant?'<span class="badge-inoc">Inoculation-relevant</span>':'');
+  document.getElementById('p-sub').textContent=`${s.subregion} \u00b7 ${s.cat} \u00b7 ${s.date}`;
+  const noBattle=(s.cat==='encampment'||s.cat==='disease_node'||s.cat==='prison');
+  document.getElementById('s-amk').textContent=noBattle?'—':fmtNum(s.amKilled);
+  document.getElementById('s-amw').textContent=noBattle?'—':fmtNum(s.amWounded);
+  document.getElementById('s-brk').textContent=noBattle?'—':fmtNum(s.brKilled);
+  document.getElementById('s-brw').textContent=noBattle?'—':fmtNum(s.brWounded);
+  document.getElementById('s-tot').textContent=noBattle?'—':fmtNum(s.totalDead);
+  document.getElementById('s-dis').textContent=s.disRange&&s.disRange!=='N/A'?'~'+s.disRange:(s.disLow!=null?`~${Number(s.disLow).toLocaleString()}–${Number(s.disHigh).toLocaleString()}`:'No specific count');
+  document.getElementById('p-victor').textContent=s.victor||'—';
+  const t=Math.min(Math.max(s.disTier||1,1),5);
+  document.getElementById('p-pips').innerHTML=[1,2,3,4,5].map(i=>`<div class="pip${i<=t?' on':''}"></div>`).join('')+`<span class="piplbl">${PIP_LABELS[t-1]} evidence</span>`;
+  document.getElementById('p-evlbl').textContent=s.disEvidenceLabel;
+  document.getElementById('p-geozone').textContent=s.geoDisZone;
+  document.getElementById('p-path').textContent=s.pathogens;
+  document.getElementById('p-disnote').textContent=s.diseaseNote;
+  document.getElementById('p-find').textContent=s.finding;
+  document.getElementById('p-hist').textContent=s.histNotes;
+  document.getElementById('p-flag').textContent=s.dataFlag;
+  document.getElementById('p-src').textContent=s.sourceShort;
+  const urlEl=document.getElementById('p-url');
+  if(s.citationUrl&&s.citationUrl.startsWith('http')){urlEl.href=s.citationUrl;urlEl.style.display='inline';}else{urlEl.style.display='none';}
+  const tags=[];
+  if(s.inocRelevant) tags.push({t:'Inoculation policy',cls:'in'});
+  if(s.abppId) tags.push({t:'ABPP: '+s.abppId,cls:'ev'});
+  if(s.cat==='encampment'||s.cat==='disease_node') tags.push({t:'Disease-primary site',cls:'pa'});
+  if(s.cat==='prison') tags.push({t:'Prison mortality site',cls:'pa'});
+  s.pathogens.split(',').slice(0,3).forEach(p=>{const pt=p.trim().split('(')[0].trim();if(pt)tags.push({t:pt,cls:'pa'});});
+  document.getElementById('p-tags').innerHTML=tags.map(t=>`<span class="tag ${t.cls}">${t.t}</span>`).join('');
+  panel.classList.add('open');
+  document.body.classList.add('ms');
+  if(!hintHidden){hint.classList.add('hidden');hintHidden=true;}
+}
+window.openPanel=openPanel;
+document.getElementById('pc').addEventListener('click',()=>{panel.classList.remove('open');document.body.classList.remove('ms');});
+AM.forEach((m,i)=>{
+  m.on('click',()=>{map.closePopup();setTimeout(()=>openPanel(i),40);});
+  m.on('popupopen',()=>{if(!hintHidden){hint.classList.add('hidden');hintHidden=true;}});
+});
+
+document.querySelectorAll('.fb').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    document.querySelectorAll('.fb').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const r=btn.dataset.region;
+    AM.forEach((m,i)=>{(r==='all'||SITES[i].region===r)?mg.addLayer(m):mg.removeLayer(m);});
+  });
+});
+
+let isDark=true;
+document.getElementById('tt').addEventListener('click',()=>{
+  isDark=!isDark;
+  document.documentElement.setAttribute('data-theme',isDark?'dark':'light');
+  if(isDark){map.removeLayer(TLIGHT);TDARK.addTo(map);map.removeLayer(curLabel);curLabel=mkLD();curLabel.addTo(map);document.getElementById('tt').innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>';}
+  else{map.removeLayer(TDARK);TLIGHT.addTo(map);map.removeLayer(curLabel);curLabel=mkLL();curLabel.addTo(map);document.getElementById('tt').innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>';}
+});
+
+setTimeout(()=>{if(!hintHidden){hint.classList.add('hidden');hintHidden=true;}},6000);
+
+  // Legend toggle (mobile)
+  (function(){
+    var btn=document.getElementById('legend-toggle');
+    var body=document.getElementById('legend-body');
+    if(!btn||!body) return;
+    btn.addEventListener('click',function(){
+      var collapsed=body.classList.toggle('collapsed');
+      btn.innerHTML=collapsed?'&#9776;':'&#215;';
+      btn.setAttribute('aria-expanded',String(!collapsed));
+    });
+  })();
+</script>
+</body>
+</html>
